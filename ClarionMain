@@ -1,0 +1,219 @@
+#include <Wire.h>
+
+/*
+	ClarionCBlue
+	Version 0.01
+	Rob Lester
+	GNU General Public License, version 3 (GPL-3.0)
+*/
+
+byte globalResponse = 0x00;
+
+int SRQ_PIN = 11;
+
+int PLP_PIN = 7;
+int NXT_PIN = 8;
+int PRV_PIN = 9;
+
+int REL_PIN = 12;
+
+int nextCommand = 1; //1 = echo //2 = length //3 = data
+int dataIndex = 0;
+
+byte nextComp = 0x00;
+
+int clockCounter = 0;
+int seconds = 0;
+int minutes = 0;
+
+bool playState = false;
+
+bool hs = false;
+
+byte data[6];
+
+void setup() {
+	Wire.begin(0x01);
+	Wire.onReceive(receiveHandler);
+	Wire.onRequest(requestHandler);
+	Serial.begin(9600);
+	pinMode(SRQ_PIN, INPUT_PULLUP);
+	pinMode(PLP_PIN, INPUT_PULLUP);
+	pinMode(NXT_PIN, INPUT_PULLUP);
+	pinMode(PRV_PIN, INPUT_PULLUP);
+	digitalWrite(SRQ_PIN, HIGH);
+	digitalWrite(PLP_PIN, HIGH);
+	digitalWrite(NXT_PIN, HIGH);
+	digitalWrite(PRV_PIN, HIGH);
+	//delay(2000);
+	//requestAudio();
+}
+
+void loop() {
+	delay(100);
+	clockCounter++;
+	if (clockCounter == 10) {
+		clockCounter = 0;
+		if (playState) {
+			seconds++;
+			if (seconds == 60) {
+				minutes++;
+				seconds = 0;
+			}
+			updateTime();
+		}
+	}
+	int rel = digitalRead(REL_PIN);
+	if (rel && !hs) {
+		Serial.println("REL");
+		requestAudio();
+	}
+}
+
+void clockReset() {
+	seconds = 0;
+	minutes = 0;
+}
+
+void receiveHandler(int howmany) {   // HEAD sent a command.
+	Serial.print("Data Received... r=");
+	if (howmany == 1) {
+		int r = Wire.read();
+		Serial.println(r);
+		if (r == 0 && hs) {
+			globalResponse = 0xF7;
+			return;
+		}
+		if (r == 247 && hs) {
+			digitalWrite(SRQ_PIN, HIGH); 
+			Serial.println("Finished.");
+			globalResponse = 0xF7;
+			hs = false;
+			return;
+		}
+		if (r == 17 && !hs) {
+			Serial.println("0x11 Command Received...");
+			globalResponse = 0x11; // Echo the 11 command;
+			nextCommand = 2;
+			return;
+		}
+		if (r == 9 && !hs) {
+			Serial.println("0x09 Command Received...");
+		}
+		if (nextComp > 0) {
+			Serial.print("Comp returned...");
+			Serial.println(r);
+			if (r != nextComp) {
+				handShake();
+			}
+		}
+		if (r == 254) {
+			pressButton(NXT_PIN);
+		}
+		if (r == 253) {
+			pressButton(PRV_PIN);
+		}
+		Serial.print("Data out -> hs=");
+		Serial.print(hs);
+		Serial.println(nextCommand);
+		if (!hs && nextCommand == 3) {
+			if (dataIndex == dataLen()) {
+				reset();
+				clearData();
+				Serial.println("*** Resetting.");
+				return;
+			}
+			Serial.print("Set data byte...");
+			globalResponse = data[dataIndex];
+			Serial.println(globalResponse);
+			return;
+		}
+	} else {
+		Serial.println("Problem.");
+		globalResponse = 0x00;
+	}
+}
+
+void reset() {
+	nextCommand = 0;
+	nextComp = 0;
+	hs = false;
+	dataIndex = 0;
+	globalResponse = 0x00;
+}
+
+void clearData() {
+	for (int i = 0; i < 6; i++) {
+		data[i] = 0;
+	}
+}
+
+void handShake() {
+	reset();
+	digitalWrite(SRQ_PIN, LOW);
+	Serial.println("Hand shaking...");
+	hs = true;
+}
+
+int dataLen() {
+	byte eoa = 0x00;
+	int i = 0;
+	while (eoa != 170) {
+		eoa = data[i];
+		i++;
+	}
+	return i - 1;
+}
+
+void requestHandler() {
+	Serial.println("Requested...");
+	if (nextCommand == 3) {
+		Serial.print("Writing Data...");
+		Serial.println(globalResponse);
+		Wire.write(globalResponse);
+		nextComp = ~globalResponse;
+		dataIndex++;
+	} 
+	else if (globalResponse == 17 && nextCommand == 2) {
+		int len = dataLen();
+		byte send[2] = {globalResponse, len};
+		Serial.println("Sending echo and len...");
+		nextCommand = 3;
+		nextComp = ~len;
+		Wire.write(send, 2);
+	}
+	else {
+		Serial.print("General Response...");
+		Serial.println(globalResponse);
+		Wire.write(globalResponse);
+	}
+	globalResponse = 0x00;
+}
+
+void requestAudio() {
+	data[0] = 0x00;
+	data[1] = 0x01;
+	data[2] = 0x08;
+	data[3] = 0xAA;
+	playState = true;
+	pressButton(PLP_PIN);
+	handShake();
+}
+
+void pressButton(int pin) {
+	digitalWrite(pin, LOW);
+	delay(50);
+	digitalWrite(pin, HIGH);
+}
+
+void updateTime() {
+	data[0] = 0x10;
+	data[1] = (byte)minutes;
+	data[2] = (byte)seconds;
+	data[3] = 0xAA;
+	Serial.print("T");
+	Serial.print(minutes);
+	Serial.print(":");
+	Serial.println(seconds);
+	handShake();
+}
