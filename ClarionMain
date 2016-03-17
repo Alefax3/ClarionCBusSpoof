@@ -9,6 +9,8 @@
 
 byte globalResponse = 0x00;
 
+byte SlaveAddress = 0x01;
+
 int SRQ_PIN = 11;
 
 int PLP_PIN = 7;
@@ -33,7 +35,7 @@ bool hs = false;
 byte data[6];
 
 void setup() {
-	Wire.begin(0x01);
+	Wire.begin(SlaveAddress);
 	Wire.onReceive(receiveHandler);
 	Wire.onRequest(requestHandler);
 	Serial.begin(9600);
