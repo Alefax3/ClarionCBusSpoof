@@ -2,7 +2,7 @@
 
 /*
 	ClarionCBlue
-	Version 0.01
+	Version 0.02
 	Rob Lester
 	GNU General Public License, version 3 (GPL-3.0)
 */
@@ -30,6 +30,8 @@ int minutes = 0;
 
 bool playState = false;
 
+bool serialIn = false;
+
 bool hs = false;
 
 byte data[6];
@@ -47,8 +49,8 @@ void setup() {
 	digitalWrite(PLP_PIN, HIGH);
 	digitalWrite(NXT_PIN, HIGH);
 	digitalWrite(PRV_PIN, HIGH);
-	//delay(2000);
-	//requestAudio();
+	delay(2000);
+	requestAudio();
 }
 
 void loop() {
@@ -69,6 +71,23 @@ void loop() {
 	if (rel && !hs) {
 		Serial.println("REL");
 		requestAudio();
+	}
+	byte sin = Serial.read();
+	if (sin > 0 && sin < 255) {
+		serialIn = true;
+		Serial.print((char)sin);
+		char v = (char)sin;
+		if (v == 't') {
+			playState = true;
+		}
+		if (v == 's') {
+			playState = false;
+			clockReset();
+		}
+	}
+	if (serialIn && sin == 255) {
+		Serial.println("");
+		serialIn = false;
 	}
 }
 
@@ -197,7 +216,7 @@ void requestAudio() {
 	data[1] = 0x01;
 	data[2] = 0x08;
 	data[3] = 0xAA;
-	playState = true;
+	//playState = true;
 	pressButton(PLP_PIN);
 	handShake();
 }
