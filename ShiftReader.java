@@ -18,7 +18,7 @@ void setup() {
   pinMode(dt_pin, INPUT_PULLUP);
   pinMode(cl_pin, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(cl_pin), shift_dt, FALLING);
-  Serial.begin(9600);
+  Serial.begin(57600);
 }
 
 void send(byte data) {
@@ -29,7 +29,7 @@ void send(byte data) {
 }
 
 void loop() {
-  delay(1);
+  delayMicroseconds(50);
   if (!receiving && sending) {
     sending = false;
     byte value = bitsToByte(dataIn);
@@ -67,6 +67,7 @@ void shift_dt() {
     digitalWrite(dt_pin, LOW);
     Serial.println("Ending Transmission...");
   } else if (counter >= 144) {
+    Serial.println("--------");
     counter = 0;
     receiving = false;
     sending = true;
