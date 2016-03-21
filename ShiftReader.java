@@ -81,5 +81,5 @@ byte bitsToByte(int bits[8]) {
   for (int i = 0; i < 8; i++) {
     if (bits[i]) result += bitmask[i];
   }
-  return result;
+  return (byte)result;
 }
