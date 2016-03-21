@@ -29,6 +29,7 @@ void send(byte data) {
 }
 
 void loop() {
+  delay(1);
   if (!receiving && sending) {
     sending = false;
     byte value = bitsToByte(dataIn);
@@ -57,17 +58,18 @@ void loop() {
 
 void shift_dt() {
   receiving = true;
+  sending = false;
   if (counter < 8) {
     dataIn[counter] = digitalRead(dt_pin);
   } else if (counter == 8) {
     Serial.println(bitsToByte(dataIn));
   } else if (counter > 140 && counter < 144) {
     digitalWrite(dt_pin, LOW);
+    Serial.println("Ending Transmission...");
   } else if (counter >= 144) {
     counter = 0;
     receiving = false;
     sending = true;
-  } else {
     digitalWrite(dt_pin, HIGH);
   }
   counter++;
