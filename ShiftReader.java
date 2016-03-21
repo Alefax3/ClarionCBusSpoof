@@ -9,8 +9,14 @@ volatile int counter = 0;
 volatile bool receiving = false;
 volatile bool sending = false;
 
+byte lastmessage = 0x00;
+bool readysend = false;
+
+byte dataMessage[6] = { 0x03, 0x00, 0x01, 0x08, 0x00, 0x00 }; // Right now the message to send is just to request audio.
+
 void setup() {
   pinMode(dt_pin, INPUT_PULLUP);
+  pinMode(cl_pin, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(cl_pin), shift_dt, FALLING);
   Serial.begin(9600);
 }
@@ -18,6 +24,7 @@ void setup() {
 void send(byte data) {
   detachInterrupt(digitalPinToInterrupt(cl_pin));
   shiftOut(dt_pin, cl_pin, MSBFIRST, data);
+  lastmessage = data;
   attachInterrupt(digitalPinToInterrupt(cl_pin), shift_dt, FALLING);
 }
 
@@ -30,8 +37,19 @@ void loop() {
     } else {
       if (value == 0x00) {
         send(0xF7);
+      } else if (value == 0x11) {
+        send(0x11);
+        readysend = true;
+        delay(1);
       } else {
-        send(value);
+        if (counter <= dataMessage[0] && readysend) {
+          send(dataMessage[counter]);
+          counter++;
+          delay(1);
+        } else {
+          counter = 0;
+          readysend = false;
+        }
       }
     }
   }
@@ -62,10 +80,4 @@ byte bitsToByte(int bits[8]) {
     if (bits[i]) result += bitmask[i];
   }
   return result;
-}
-
-void processByte() {
-  if (dataIn == 0xF7) {
-    shiftOut(dt_pin, cl_pin, 
-  }
 }
