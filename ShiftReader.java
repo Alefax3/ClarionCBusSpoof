@@ -1,6 +1,6 @@
 /* Shift Reader app for Arduino to test shift reading theory against Clarion data bus */
 
-volatile in dataIn[8];
+volatile int dataIn[8];
 
 int dt_pin = 2;
 int cl_pin = 7;
