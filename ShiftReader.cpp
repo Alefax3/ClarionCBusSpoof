@@ -6,42 +6,77 @@ int dt_pin = 2;
 int cl_pin = 3;
 
 volatile int counter = 0;
-volatile byte command = 0xFF;
+volatile byte lastbytein = 0xFF;
 
-byte lastmessage = 0x00;
+volatile bool initialized = false;
 
-byte dataMessage[6] = { 0x03, 0x00, 0x01, 0x08, 0x00, 0x00 }; // Right now the message to send is just to request audio.
+int messageStep = -1;
+
+#define S_INIT -1;
+#define S_COMMAND_ECHO 0;
+#define S_BYTE_VERIFY 1;
+#define S_BYTE_SEND 2;
+
+byte lastbyteout = 0xFF;
+byte nextbyteout = 0xFF;
+
+byte messageToSend[6] = { 0x03, 0x00, 0x01, 0x08, 0x00, 0x00 }; // Right now the message to send is just to request audio.
+int messageIndex = 1;
 
 void setup() {
   pinMode(dt_pin, INPUT_PULLUP);
   pinMode(cl_pin, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(cl_pin), shift_dt, FALLING);
+  attachInterrupt(digitalPinToInterrupt(cl_pin), shift_dt, RISING);
+  //attachInterrupt(digitalPinToInterrupt(dt_pin), init_mod, FALLING);
   Serial.begin(9600);
 }
 
 void send(byte data) {
-  detachInterrupt(digitalPinToInterrupt(cl_pin));
+  noInterrupts();
   shiftDataOut(dt_pin, cl_pin, MSBFIRST, data);
-  lastmessage = data;
-  attachInterrupt(digitalPinToInterrupt(cl_pin), shift_dt, RISING);
+  lastbyteout = data;
+  interrupts();
 }
 
 void loop() {
   delay(2);
-  if (command != 0xFF) {
-    send(command);
-    counter = 0;
-    Serial.println(command);
-    command = 0xFF;
+  if (lastbytein != 0xFF) {
+    Serial.println(lastbytein);
+    switch(messageStep) {
+      case S_INIT:
+      case S_COMMAND_ECHO:
+        send(lastbytein);
+        executeCommand(lastbytein);
+        if (messageStep == S_COMMAND_ECHO) send(messageToSend[0]);
+        messageStep++;
+        messageIndex = 1;
+        break;
+      case S_BYTE_VERIFY:
+        if (lastbyteout != ~lastbytein) {
+          resetMessage();
+          break;
+        }
+        send(messageToSend[messageIndex]);
+        messageIndex++;
+        messageStep++;
+        break;
+    }
   }
+}
+
+void resetMessage() {
+  lastbytein = 0xFF;
+  lastbyteout = 0xFF;
+  nextbyteout = 0xFF;
+  messageStep = S_INIT;
 }
 
 void shift_dt() {
   if (counter < 8) {
-    if (command == 0xFF) {
-      command = digitalRead(dt_pin);
+    if (lastbytein == 0xFF) {
+      lastbytein = digitalRead(dt_pin);
     } else {
-      command = digitalRead(dt_pin) << 1;
+      lastbytein = digitalRead(dt_pin) << 1;
     }
   } else if (counter > 20) {
     digitalWrite(dt_pin, LOW);
