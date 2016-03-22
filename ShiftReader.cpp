@@ -1,26 +1,23 @@
 /* Shift Reader app for Arduino to test shift reading theory against Clarion data bus */
 
-volatile int dataIn[8];
-
-const int dt_pin = 2;
-const int cl_pin = 3;
-
-volatile bool dataIO = false;
-volatile int counter = 0;
-volatile byte lastbytein = 0xFF;
-
-volatile bool initialized = false;
-
-volatile int messageStep = -1;
-
+#define dt_pin 2
+#define cl_pin 3
 #define S_INIT -1
 #define S_COMMAND_ECHO 0
 #define S_BYTE_SEND 1
 #define DOUT true
 #define DIN false
 
+volatile bool dataIO = false;
+volatile int counter = 0;
+
+volatile byte lastbytein = 0xFF;
 volatile byte lastbyteout = 0xFF;
 volatile byte nextbyteout = 0xFF;
+
+volatile bool initialized = false;
+
+int messageStep = -1;
 
 byte messageToSend[6] = { 0x03, 0x00, 0x01, 0x08, 0x00, 0x00 }; // Right now the message to send is just to request audio.
 int messageIndex = 1;
