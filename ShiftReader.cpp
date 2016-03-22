@@ -2,23 +2,25 @@
 
 volatile int dataIn[8];
 
-int dt_pin = 2;
-int cl_pin = 3;
+const int dt_pin = 2;
+const int cl_pin = 3;
 
-volatile bool byteDone = false;
+volatile bool dataIO = false;
 volatile int counter = 0;
 volatile byte lastbytein = 0xFF;
 
 volatile bool initialized = false;
 
-int messageStep = -1;
+volatile int messageStep = -1;
 
 #define S_INIT -1
 #define S_COMMAND_ECHO 0
 #define S_BYTE_SEND 1
+#define DOUT true
+#define DIN false
 
-byte lastbyteout = 0xFF;
-byte nextbyteout = 0xFF;
+volatile byte lastbyteout = 0xFF;
+volatile byte nextbyteout = 0xFF;
 
 byte messageToSend[6] = { 0x03, 0x00, 0x01, 0x08, 0x00, 0x00 }; // Right now the message to send is just to request audio.
 int messageIndex = 1;
@@ -39,7 +41,15 @@ void send(byte data) {
 }
 
 void loop() {
-  delay(2);
+  if (lastbytein != 0xFF && byteDone) {
+    noInterrupts();
+    Serial.println(lastbytein);
+    lastbytein = 0xFF;
+    dataIO = DIN;
+    counter = 0;
+    interrupts();
+  }
+  /*delay(2);
   if (lastbytein != 0xFF && byteDone) {
     counter = 0;
     noInterrupts();
@@ -70,7 +80,7 @@ void loop() {
         break;
     }
     interrupts();
-  }
+  }*/
 }
 
 void executeCommand(byte command) {
@@ -99,15 +109,17 @@ void resetMessage() {
 }
 
 void shift_dt() {
-  if (counter < 8) {
+  if (counter < 8 && dataIO == DIN) {
     if (lastbytein == 0xFF) {
       lastbytein = digitalRead(dt_pin);
     } else {
       lastbytein = digitalRead(dt_pin) << 1;
     }
+  } else if (counter < 8 && dataIO == DOUT) {
+    digitalWrite(dt_pin, !!(nextbyteout & (1 << ((8 - 1 - counter)))));
   } else if (counter == 8) {
-    byteDone = true;
-  } else if (counter > 10) {
+    dataIO = !dataIO;
+  } else if (counter > 15) {
     digitalWrite(dt_pin, LOW);
     delayMicroseconds(1);
     digitalWrite(dt_pin, HIGH);
