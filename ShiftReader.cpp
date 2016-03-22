@@ -29,31 +29,22 @@ void setup() {
   pinMode(dt_pin, INPUT_PULLUP);
   pinMode(cl_pin, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(cl_pin), shift_dt, RISING);
-  //attachInterrupt(digitalPinToInterrupt(dt_pin), init_mod, FALLING);
   Serial.begin(115200);
 }
 
 void send(byte data) {
-  noInterrupts();
+  /*noInterrupts();
   shiftDataOut(dt_pin, cl_pin, MSBFIRST, data);
   lastbyteout = data;
-  interrupts();
+  interrupts();*/
+  nextbyteout = data;
+  lastbyteout = data;
 }
 
 void loop() {
-  if (lastbytein != 0xFF && byteDone) {
-    noInterrupts();
-    Serial.println(lastbytein);
-    lastbytein = 0xFF;
-    dataIO = DIN;
-    counter = 0;
-    interrupts();
-  }
-  /*delay(2);
-  if (lastbytein != 0xFF && byteDone) {
+  if (lastbytein != 0xFF && dataIO == DOUT) {
     counter = 0;
     noInterrupts();
-    Serial.println(lastbytein);
     switch(messageStep) { // Starts at -1
       case S_INIT:
       case S_COMMAND_ECHO:
@@ -80,7 +71,8 @@ void loop() {
         break;
     }
     interrupts();
-  }*/
+    Serial.println(lastbytein);
+  }
 }
 
 void executeCommand(byte command) {
@@ -104,7 +96,6 @@ void resetMessage() {
   lastbytein = 0xFF;
   lastbyteout = 0xFF;
   nextbyteout = 0xFF;
-  //send(nextbyteout);
   messageStep = S_INIT;
 }
 
