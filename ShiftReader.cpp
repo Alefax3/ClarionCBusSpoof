@@ -61,6 +61,10 @@ void loop() {
           break;
         }
         send(messageToSend[messageIndex]);
+        if (messageIndex == messageToSend[0]) {
+          resetMessage();
+          break;
+        }
         messageIndex++;
         messageStep++;
         break;
@@ -69,11 +73,28 @@ void loop() {
   }
 }
 
+void executeCommand(byte command) {
+  switch(command) {
+    case 0x11:
+      messageToSend[0] = 0x03;
+      messageToSend[1] = 0x00;
+      messageToSend[2] = 0x01;
+      messageToSend[3] = 0x08;
+      break;
+    case 0x09:
+      messageToSend[0] = 0x03;
+      messageToSend[1] = 0x00;
+      messageToSend[2] = 0x01;
+      messageToSend[3] = 0x00;
+      break;
+  }
+}
+
 void resetMessage() {
   lastbytein = 0xFF;
   lastbyteout = 0xFF;
   nextbyteout = 0xFF;
-  send(nextbyteout);
+  //send(nextbyteout);
   messageStep = S_INIT;
 }
 
