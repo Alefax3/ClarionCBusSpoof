@@ -3,16 +3,12 @@
 volatile int dataIn[8];
 
 int dt_pin = 2;
-int cl_pin = 7;
+int cl_pin = 3;
 
 volatile int counter = 0;
-volatile bool receiving = false;
-volatile bool sending = false;
-
 volatile byte command = 0xFF;
 
 byte lastmessage = 0x00;
-bool readysend = false;
 
 byte dataMessage[6] = { 0x03, 0x00, 0x01, 0x08, 0x00, 0x00 }; // Right now the message to send is just to request audio.
 
@@ -20,7 +16,7 @@ void setup() {
   pinMode(dt_pin, INPUT_PULLUP);
   pinMode(cl_pin, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(cl_pin), shift_dt, FALLING);
-  Serial.begin(57600);
+  Serial.begin(9600);
 }
 
 void send(byte data) {
@@ -34,6 +30,7 @@ void loop() {
   delay(2);
   if (command != 0xFF) {
     send(command);
+    counter = 0;
     Serial.println(command);
     command = 0xFF;
   }
