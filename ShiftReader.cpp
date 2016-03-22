@@ -120,13 +120,13 @@ void shiftDataOut(uint8_t dataPin, uint8_t clockPin, uint8_t bitOrder, int val)
 {
   uint8_t i;
   for (i = 0; i < 8; i++)  {
-    digitalWrite(clockPin, LOW);
-    if (bitOrder == LSBFIRST)
+    digitalWrite(clockPin, LOW); // Bring clock low
+    if (bitOrder == LSBFIRST) // Set data pin on the falling edge of clock...
       digitalWrite(dataPin, !!(val & (1 << i)));
     else    
       digitalWrite(dataPin, !!(val & (1 << ((8 - 1 - i)))));
-    delayMicroseconds(1);
-    digitalWrite(clockPin, HIGH);
-    delayMicroseconds(1);
+    delayMicroseconds(4);
+    digitalWrite(clockPin, HIGH); // Bring clock high, leaving data where it is to be read on the rising edge...
+    delayMicroseconds(4);
   }
 }
