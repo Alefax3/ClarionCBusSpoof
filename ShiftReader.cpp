@@ -1,7 +1,13 @@
-/* Shift Reader app for Arduino to test shift reading theory against Clarion data bus */
+/*
+  Clarion C-Bus Driver
+  Prototyped off 1995 Saab 900 Clarion stereo.
+  Read the Readme for more information
+  Rob Lester
+  GNU General Public License, version 2.0 (GPL-2.0)
+*/
 
-#define dt_pin 2
-#define cl_pin 3
+#define dt_pin 7 // Data Pin
+#define cl_pin 2 // Clock pin on INT0
 #define S_INIT -1
 #define S_COMMAND_ECHO 0
 #define S_BYTE_SEND 2
