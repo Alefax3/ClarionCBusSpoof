@@ -34,6 +34,7 @@ void loop() {
   delay(2);
   if (command != 0xFF) {
     send(command);
+    Serial.println(command);
     command = 0xFF;
   }
 }
