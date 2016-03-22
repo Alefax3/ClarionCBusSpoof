@@ -5,6 +5,7 @@ volatile int dataIn[8];
 int dt_pin = 2;
 int cl_pin = 3;
 
+volatile bool byteDone = false;
 volatile int counter = 0;
 volatile byte lastbytein = 0xFF;
 
@@ -14,8 +15,7 @@ int messageStep = -1;
 
 #define S_INIT -1;
 #define S_COMMAND_ECHO 0;
-#define S_BYTE_VERIFY 1;
-#define S_BYTE_SEND 2;
+#define S_BYTE_SEND 1;
 
 byte lastbyteout = 0xFF;
 byte nextbyteout = 0xFF;
@@ -28,7 +28,7 @@ void setup() {
   pinMode(cl_pin, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(cl_pin), shift_dt, RISING);
   //attachInterrupt(digitalPinToInterrupt(dt_pin), init_mod, FALLING);
-  Serial.begin(9600);
+  Serial.begin(115200);
 }
 
 void send(byte data) {
@@ -40,18 +40,22 @@ void send(byte data) {
 
 void loop() {
   delay(2);
-  if (lastbytein != 0xFF) {
+  if (lastbytein != 0xFF && byteDone) {
+    counter = 0;
+    noInterrupts();
     Serial.println(lastbytein);
     switch(messageStep) {
       case S_INIT:
       case S_COMMAND_ECHO:
         send(lastbytein);
-        executeCommand(lastbytein);
-        if (messageStep == S_COMMAND_ECHO) send(messageToSend[0]);
+        if (messageStep == S_COMMAND_ECHO) {
+          executeCommand(lastbytein);
+          send(messageToSend[0]);
+        }
         messageStep++;
         messageIndex = 1;
         break;
-      case S_BYTE_VERIFY:
+      case S_BYTE_SEND:
         if (lastbyteout != ~lastbytein) {
           resetMessage();
           break;
@@ -61,6 +65,7 @@ void loop() {
         messageStep++;
         break;
     }
+    interrupts();
   }
 }
 
@@ -78,6 +83,8 @@ void shift_dt() {
     } else {
       lastbytein = digitalRead(dt_pin) << 1;
     }
+  } else if (counter == 8) {
+    byteDone = true;
   } else if (counter > 20) {
     digitalWrite(dt_pin, LOW);
     delayMicroseconds(1);
