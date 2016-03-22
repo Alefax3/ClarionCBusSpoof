@@ -10,8 +10,8 @@
 #define cl_pin 2 // Clock pin on INT0
 #define S_INIT -1
 #define S_COMMAND_ECHO 0
-#define S_BYTE_SEND 2
 #define S_RESP_LEN 1
+#define S_BYTE_SEND 2
 #define DOUT true
 #define DIN false
 
@@ -55,12 +55,13 @@ void loop() {
         send(lastbytein);
         if (messageStep == S_COMMAND_ECHO) {
           executeCommand(lastbytein);
+          send(messageToSend[0]);
+          messageIndex = 1;
         }
         messageStep++;
         break;
       case S_RESP_LEN:
         send(messageToSend[0]);
-        messageStep++;
         messageIndex = 1;
         break;
       case S_BYTE_SEND:
@@ -71,6 +72,7 @@ void loop() {
         send(messageToSend[messageIndex]);
         if (messageIndex == messageToSend[0]) { // Checks if at last bite, and resets
           resetMessage();
+          messageStep = S_COMMAND_ECHO;
           break;
         }
         messageIndex++;
@@ -90,12 +92,6 @@ void executeCommand(byte command) {
       messageToSend[2] = 0x01;
       messageToSend[3] = 0x08;
       break;
-    /*case 0x5C:
-      messageToSend[0] = 0x03;
-      messageToSend[1] = 0x00;
-      messageToSend[2] = 0x01;
-      messageToSend[3] = 0x05;
-      break;*/
     default: // Respond to anything not mentioned.
       messageToSend[0] = 0x03;
       messageToSend[1] = 0x00;
@@ -112,17 +108,17 @@ void resetMessage() {
   messageStep = S_INIT;
 }
 
-void shift_dt() {
+void shift_dt() { // Interrupt function. Fired on every clock pulse from HEAD.
   if (counter < 8 && dataIO == DIN) {
     if (lastbytein == 0xFF) {
-      lastbytein = digitalRead(dt_pin);
+      lastbytein = digitalRead(dt_pin); // First bit in
     } else {
-      lastbytein = digitalRead(dt_pin) << 1;
+      lastbytein = digitalRead(dt_pin) << 1; // Shift in next bit.
     }
   } else if (counter < 8 && dataIO == DOUT) {
-    digitalWrite(dt_pin, !!(nextbyteout & (1 << ((8 - 1 - counter)))));
+    digitalWrite(dt_pin, !!(nextbyteout & (1 << ((8 - 1 - counter))))); // Shift out bit
   } else if (counter == 8) {
-    dataIO = !dataIO;
+    if (dataIO == DIN && messageStep != S_RESP_LEN) dataIO = !dataIO;
   } else if (counter > 15) {
     digitalWrite(dt_pin, LOW);
     delayMicroseconds(1);
@@ -131,7 +127,7 @@ void shift_dt() {
   counter++;
 }
 
-// Shift the bits out to the Head according to protocol.
+// Shift the bits out to the Head according to protocol. Probably not needed.
 void shiftDataOut(uint8_t dataPin, uint8_t clockPin, uint8_t bitOrder, int val)
 {
   uint8_t i;
