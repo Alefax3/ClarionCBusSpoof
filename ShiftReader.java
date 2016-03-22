@@ -9,6 +9,8 @@ volatile int counter = 0;
 volatile bool receiving = false;
 volatile bool sending = false;
 
+volatile byte command = 0xFF;
+
 byte lastmessage = 0x00;
 bool readysend = false;
 
@@ -23,64 +25,46 @@ void setup() {
 
 void send(byte data) {
   detachInterrupt(digitalPinToInterrupt(cl_pin));
-  shiftOut(dt_pin, cl_pin, MSBFIRST, data);
+  shiftDataOut(dt_pin, cl_pin, MSBFIRST, data);
   lastmessage = data;
-  attachInterrupt(digitalPinToInterrupt(cl_pin), shift_dt, FALLING);
+  attachInterrupt(digitalPinToInterrupt(cl_pin), shift_dt, RISING);
 }
 
 void loop() {
-  delayMicroseconds(50);
-  if (!receiving && sending) {
-    sending = false;
-    byte value = bitsToByte(dataIn);
-    if (value == 0xF7) {
-      send(value);
-    } else {
-      if (value == 0x00) {
-        send(0xF7);
-      } else if (value == 0x11) {
-        send(0x11);
-        readysend = true;
-        delay(1);
-      } else {
-        if (counter <= dataMessage[0] && readysend) {
-          send(dataMessage[counter]);
-          counter++;
-          delay(1);
-        } else {
-          counter = 0;
-          readysend = false;
-        }
-      }
-    }
+  delay(2);
+  if (command != 0xFF) {
+    send(command);
+    command = 0xFF;
   }
 }
 
 void shift_dt() {
-  receiving = true;
-  sending = false;
   if (counter < 8) {
-    dataIn[counter] = digitalRead(dt_pin);
-  } else if (counter == 8) {
-    //Serial.println(bitsToByte(dataIn));
-  } else if (counter > 140 && counter < 144) {
+    if (command == 0xFF) {
+      command = digitalRead(dt_pin);
+    } else {
+      command = digitalRead(dt_pin) << 1;
+    }
+  } else if (counter > 20) {
     digitalWrite(dt_pin, LOW);
-    //Serial.println("Ending Transmission...");
-  } else if (counter >= 144) {
-    //Serial.println("--------");
-    counter = 0;
-    receiving = false;
-    sending = true;
+    delayMicroseconds(1);
     digitalWrite(dt_pin, HIGH);
   }
   counter++;
 }
 
-byte bitsToByte(int bits[8]) {
-  int bitmask[8] = {128,64,32,16,8,4,2,1};
-  int result = 0;
-  for (int i = 0; i < 8; i++) {
-    if (bits[i]) result += bitmask[i];
+// Shift the bits out to the Head according to protocol.
+void shiftDataOut(uint8_t dataPin, uint8_t clockPin, uint8_t bitOrder, int val)
+{
+  uint8_t i;
+  for (i = 0; i < 8; i++)  {
+    digitalWrite(clockPin, LOW);
+    if (bitOrder == LSBFIRST)
+      digitalWrite(dataPin, !!(val & (1 << i)));
+    else    
+      digitalWrite(dataPin, !!(val & (1 << ((8 - 1 - i)))));
+    delayMicroseconds(1);
+    digitalWrite(clockPin, HIGH);
+    delayMicroseconds(1);
   }
-  return (byte)result;
 }
