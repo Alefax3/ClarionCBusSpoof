@@ -73,6 +73,7 @@ void resetMessage() {
   lastbytein = 0xFF;
   lastbyteout = 0xFF;
   nextbyteout = 0xFF;
+  send(nextbyteout);
   messageStep = S_INIT;
 }
 
