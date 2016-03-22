@@ -44,7 +44,7 @@ void loop() {
     counter = 0;
     noInterrupts();
     Serial.println(lastbytein);
-    switch(messageStep) {
+    switch(messageStep) { // Starts at -1
       case S_INIT:
       case S_COMMAND_ECHO:
         send(lastbytein);
@@ -61,7 +61,7 @@ void loop() {
           break;
         }
         send(messageToSend[messageIndex]);
-        if (messageIndex == messageToSend[0]) {
+        if (messageIndex == messageToSend[0]) { // Checks if at last bite, and resets
           resetMessage();
           break;
         }
@@ -107,7 +107,7 @@ void shift_dt() {
     }
   } else if (counter == 8) {
     byteDone = true;
-  } else if (counter > 20) {
+  } else if (counter > 10) {
     digitalWrite(dt_pin, LOW);
     delayMicroseconds(1);
     digitalWrite(dt_pin, HIGH);
