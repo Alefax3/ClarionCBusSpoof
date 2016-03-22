@@ -13,9 +13,9 @@ volatile bool initialized = false;
 
 int messageStep = -1;
 
-#define S_INIT -1;
-#define S_COMMAND_ECHO 0;
-#define S_BYTE_SEND 1;
+#define S_INIT -1
+#define S_COMMAND_ECHO 0
+#define S_BYTE_SEND 1
 
 byte lastbyteout = 0xFF;
 byte nextbyteout = 0xFF;
