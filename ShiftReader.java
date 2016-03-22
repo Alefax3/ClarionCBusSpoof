@@ -62,12 +62,12 @@ void shift_dt() {
   if (counter < 8) {
     dataIn[counter] = digitalRead(dt_pin);
   } else if (counter == 8) {
-    Serial.println(bitsToByte(dataIn));
+    //Serial.println(bitsToByte(dataIn));
   } else if (counter > 140 && counter < 144) {
     digitalWrite(dt_pin, LOW);
-    Serial.println("Ending Transmission...");
+    //Serial.println("Ending Transmission...");
   } else if (counter >= 144) {
-    Serial.println("--------");
+    //Serial.println("--------");
     counter = 0;
     receiving = false;
     sending = true;
