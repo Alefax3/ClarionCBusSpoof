@@ -4,7 +4,8 @@
 #define cl_pin 3
 #define S_INIT -1
 #define S_COMMAND_ECHO 0
-#define S_BYTE_SEND 1
+#define S_BYTE_SEND 2
+#define S_RESP_LEN 1
 #define DOUT true
 #define DIN false
 
@@ -19,7 +20,7 @@ volatile bool initialized = false;
 
 int messageStep = -1;
 
-byte messageToSend[6] = { 0x03, 0x00, 0x01, 0x08, 0x00, 0x00 }; // Right now the message to send is just to request audio.
+byte messageToSend[6] = { 0x03, 0x00, 0x01, 0x00, 0x00, 0x00 }; // Initialize the standard response message. This will change frequently.
 int messageIndex = 1;
 
 void setup() {
@@ -48,8 +49,11 @@ void loop() {
         send(lastbytein);
         if (messageStep == S_COMMAND_ECHO) {
           executeCommand(lastbytein);
-          send(messageToSend[0]);
         }
+        messageStep++;
+        break;
+      case S_RESP_LEN:
+        send(messageToSend[0]);
         messageStep++;
         messageIndex = 1;
         break;
@@ -68,7 +72,7 @@ void loop() {
         break;
     }
     interrupts();
-    Serial.println(lastbytein);
+    Serial.println(lastbytein, HEX);
   }
 }
 
