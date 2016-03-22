@@ -74,13 +74,19 @@ void loop() {
 
 void executeCommand(byte command) {
   switch(command) {
-    case 0x11:
+    case 0x11: // Request Audio
       messageToSend[0] = 0x03;
       messageToSend[1] = 0x00;
       messageToSend[2] = 0x01;
       messageToSend[3] = 0x08;
       break;
-    case 0x09:
+    /*case 0x5C:
+      messageToSend[0] = 0x03;
+      messageToSend[1] = 0x00;
+      messageToSend[2] = 0x01;
+      messageToSend[3] = 0x05;
+      break;*/
+    default: // Respond to anything not mentioned.
       messageToSend[0] = 0x03;
       messageToSend[1] = 0x00;
       messageToSend[2] = 0x01;
