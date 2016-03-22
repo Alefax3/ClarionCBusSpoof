@@ -18,3 +18,10 @@ This document was incredibly insightful in regards to the protocols Clarion is u
 
 ### Components
 Component list will be published when a prototype has been built.
+
+### Licensing
+OPEN SOURCE BABY.
+
+GNU General Public License, version 2.0 (GPL-2.0)
+
+https://opensource.org/licenses/GPL-2.0
