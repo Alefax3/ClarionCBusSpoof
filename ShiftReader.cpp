@@ -55,14 +55,13 @@ void loop() {
         send(lastbytein);
         if (messageStep == S_COMMAND_ECHO) {
           executeCommand(lastbytein);
-          send(messageToSend[0]);
-          messageIndex = 1;
         }
         messageStep++;
         break;
       case S_RESP_LEN:
         send(messageToSend[0]);
         messageIndex = 1;
+        messageStep++;
         break;
       case S_BYTE_SEND:
         if (lastbyteout != ~lastbytein) {
