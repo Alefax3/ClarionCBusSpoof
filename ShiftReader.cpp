@@ -49,6 +49,8 @@ void loop() {
   if (lastbytein != 0xFF && dataIO == DOUT) {
     counter = 0;
     noInterrupts();
+    Serial.println(lastbytein, HEX);
+    delay(1);
     switch(messageStep) { // Starts at -1
       case S_INIT:
       case S_COMMAND_ECHO:
@@ -79,7 +81,6 @@ void loop() {
         break;
     }
     interrupts();
-    Serial.println(lastbytein, HEX);
   }
 }
 
@@ -118,26 +119,10 @@ void shift_dt() { // Interrupt function. Fired on every clock pulse from HEAD.
     digitalWrite(dt_pin, !!(nextbyteout & (1 << ((8 - 1 - counter))))); // Shift out bit
   } else if (counter == 8) {
     if (dataIO == DIN && messageStep != S_RESP_LEN) dataIO = !dataIO;
-  } else if (counter > 15) {
+  } else if (counter > 50) {
     digitalWrite(dt_pin, LOW);
     delayMicroseconds(1);
     digitalWrite(dt_pin, HIGH);
   }
   counter++;
-}
-
-// Shift the bits out to the Head according to protocol. Probably not needed.
-void shiftDataOut(uint8_t dataPin, uint8_t clockPin, uint8_t bitOrder, int val)
-{
-  uint8_t i;
-  for (i = 0; i < 8; i++)  {
-    digitalWrite(clockPin, LOW); // Bring clock low
-    if (bitOrder == LSBFIRST) // Set data pin on the falling edge of clock...
-      digitalWrite(dataPin, !!(val & (1 << i)));
-    else    
-      digitalWrite(dataPin, !!(val & (1 << ((8 - 1 - i)))));
-    delayMicroseconds(4);
-    digitalWrite(clockPin, HIGH); // Bring clock high, leaving data where it is to be read on the rising edge...
-    delayMicroseconds(4);
-  }
 }
