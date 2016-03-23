@@ -8,7 +8,11 @@
 
 #define dt_pin 7 // Data Pin
 #define cl_pin 2 // Clock pin on INT0
-#define S_INIT -1
+#define rs_pin 6 // RSQ pin
+#define bt_pl_pin 5 // Playback: Play
+#define bt_nx_pin 4 // Playback: Next
+#define by_pr_pin 3 // Playback: Prev
+#define S_INIT -1 // Initial transmission step
 #define S_COMMAND_ECHO 0
 #define S_RESP_LEN 1
 #define S_BYTE_SEND 2
@@ -31,16 +35,12 @@ int messageIndex = 1;
 
 void setup() {
   pinMode(dt_pin, INPUT_PULLUP);
-  pinMode(cl_pin, INPUT_PULLUP);
+  pinMode(cl_pin, INPUT);
   attachInterrupt(digitalPinToInterrupt(cl_pin), shift_dt, RISING);
   Serial.begin(115200);
 }
 
 void send(byte data) {
-  /*noInterrupts();
-  shiftDataOut(dt_pin, cl_pin, MSBFIRST, data);
-  lastbyteout = data;
-  interrupts();*/
   nextbyteout = data;
   lastbyteout = data;
 }
