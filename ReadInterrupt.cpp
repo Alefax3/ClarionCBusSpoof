@@ -47,3 +47,4 @@ void shift_dt() {
 	else bitWrite(PORTD, dt_pin, bitRead(nextbyteout, (counter < 8 ? counter - 7 : 8)));
 	counter++;
 }
+
