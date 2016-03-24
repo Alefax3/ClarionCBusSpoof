@@ -14,14 +14,9 @@ volatile bool reading = true;
 volatile int counter = 0;
 
 volatile byte lastbytein = 0x00;
-volatile byte nextbyteout = 0x00;
+volatile byte nextbyteout = 0xF7;
 
 volatile int bitsin[8];
-
-volatile int lastInterruptTime = 0;
-
-volatile byte bread = 0x00;
-volatile byte bwrite = 0x00;
 
 void setup() {
 	pinMode(dt_pin, INPUT_PULLUP);
@@ -34,13 +29,14 @@ void loop() {
 	if (counter > 500) {
 		noInterrupts();
 		counter = 0;
-		lastInterruptTime = 0;
 		for (int i = 0; i < 8; i++) {
 			lastbytein = (lastbytein << 1) | bitsin[i];
 		}
 		bitWrite(PORTD, dt_pin, 0);
 		delayMicroseconds(21);
 		bitWrite(PORTD, dt_pin, 1);
+		reading = !reading;
+		nextbyteout = lastbytein;
 		Serial.println(lastbytein, HEX);
 		interrupts();
 	}
@@ -48,6 +44,6 @@ void loop() {
 
 void shift_dt() {
 	if (reading) bitsin[counter] = bitRead(PORTD, dt_pin);
-	else bitWrite(PORTD, dt_pin, bitRead(nextbyteout, counter));
+	else bitWrite(PORTD, dt_pin, bitRead(nextbyteout, 7 - counter));
 	counter++;
 }
