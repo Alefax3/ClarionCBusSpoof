@@ -39,7 +39,7 @@ void loop() {
 			lastbytein = (lastbytein << 1) | bitsin[i];
 		}
 		bitWrite(PORTD, dt_pin, 0);
-		delayMicroseconds(1);
+		delayMicroseconds(21);
 		bitWrite(PORTD, dt_pin, 1);
 		Serial.println(lastbytein, HEX);
 		interrupts();
