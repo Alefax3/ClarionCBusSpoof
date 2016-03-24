@@ -44,6 +44,6 @@ void loop() {
 
 void shift_dt() {
 	if (reading) bitsin[counter] = bitRead(PORTD, dt_pin);
-	else bitWrite(PORTD, dt_pin, bitRead(nextbyteout, 7 - counter));
+	else bitWrite(PORTD, dt_pin, bitRead(nextbyteout, (counter < 8 ? counter - 7 : 8)));
 	counter++;
 }
