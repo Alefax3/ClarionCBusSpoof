@@ -10,14 +10,18 @@
 #define cl_pin 2 // Clock pin on INT0
 
 
-volatile bool dataIO = false;
+volatile bool reading = true;
 volatile int counter = 0;
 
 volatile byte lastbytein = 0x00;
+volatile byte nextbyteout = 0x00;
 
 volatile int bitsin[8];
 
 volatile int lastInterruptTime = 0;
+
+volatile byte bread = 0x00;
+volatile byte bwrite = 0x00;
 
 void setup() {
 	pinMode(dt_pin, INPUT_PULLUP);
@@ -27,18 +31,23 @@ void setup() {
 }
 
 void loop() {
-	registerState = PIND;
-	if (micros() > (lastInterruptTime + 20)) {
+	if (counter > 500) {
+		noInterrupts();
 		counter = 0;
+		lastInterruptTime = 0;
 		for (int i = 0; i < 8; i++) {
 			lastbytein = (lastbytein << 1) | bitsin[i];
 		}
+		bitWrite(PORTD, dt_pin, 0);
+		delayMicroseconds(1);
+		bitWrite(PORTD, dt_pin, 1);
 		Serial.println(lastbytein, HEX);
+		interrupts();
 	}
 }
 
 void shift_dt() {
-	bitsin[counter] = bitRead(registerState, dt_pin);
-	lastInterruptTime = micros();
+	if (reading) bitsin[counter] = bitRead(PORTD, dt_pin);
+	else bitWrite(PORTD, dt_pin, bitRead(nextbyteout, counter));
 	counter++;
 }
